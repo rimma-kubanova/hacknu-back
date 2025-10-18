@@ -322,25 +322,21 @@ async def generate_moodboard_images(
         client = get_higgsfield_client()
         
         user_prompt = request.prompt if request.prompt else "modern design aesthetic"
-        
-        liked_count = len(request.liked_pictures) if request.liked_pictures else 0
+        liked_count = request.liked_pictures_count or 0
         images_to_generate = 10 - liked_count
         
         if images_to_generate <= 0:
-            return MoodboardResponse(
-                images=request.liked_pictures[:10],
-                total=len(request.liked_pictures[:10])
-            )
+            return MoodboardResponse(images=[], total=0)
         
         ai_prompts = await generate_moodboard_prompts_with_openai(user_prompt, images_to_generate)
-
+        
         generated_images = []
         tasks = []
         
-        for _, prompt in enumerate(ai_prompts):
+        input_images = [request.uploaded_image] if request.uploaded_image else None
+        
+        for prompt in ai_prompts:
             aspect_ratio = random.choice(RANDOM_ASPECT_RATIOS)
-            input_images = request.liked_pictures if request.liked_pictures else None
-            
             tasks.append(
                 _generate_single_image(client, prompt, aspect_ratio, input_images)
             )

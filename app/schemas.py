@@ -60,7 +60,8 @@ class VideoHistoryResponse(BaseModel):
 class MoodboardRequest(BaseModel):
     """Request for moodboard generation"""
     prompt: Optional[str] = None
-    liked_pictures: Optional[List[str]] = None
+    liked_pictures_count: Optional[int] = 0
+    uploaded_image: Optional[str] = None
 
 
 class MoodboardResponse(BaseModel):
