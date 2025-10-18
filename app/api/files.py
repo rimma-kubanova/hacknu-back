@@ -9,14 +9,14 @@ router = APIRouter(prefix="/files", tags=["Files"])
 # In-memory storage: {id: (bytes, content_type, expires_at)}
 STORE: Dict[str, Tuple[bytes, str, float]] = {}
 
-TTL_SECONDS = 15 * 60  # 15 minutes
+TTL_SECONDS = 15 * 60
 
 
 @router.post("")
 async def upload_file(file: UploadFile = File(...)):
     """
     Upload a file and get a temporary URL.
-    File will expire after 15 minutes.
+    File will expire after TTL_SECONDS.
     """
     fid = uuid.uuid4().hex[:12]
     file_bytes = await file.read()
@@ -59,7 +59,6 @@ async def serve_file(fid: str):
 
 
 def _cleanup_expired():
-    """Remove expired files from memory"""
     now = time.time()
     expired = [fid for fid, (_, _, exp) in STORE.items() if now > exp]
     for fid in expired:

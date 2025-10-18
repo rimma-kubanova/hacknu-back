@@ -148,11 +148,6 @@ Authorization: Bearer <token>
   "prompt": "Modern billboard on city street at golden hour with fish-themed poster design",
   "images": ["/files/abc123"],
   "aspect_ratio": "16:9",
-  "options": {
-    "mode": "billboard",
-    "animate": true,
-    "model_hint": "fast"
-  }
 }
 ```
 
@@ -225,10 +220,6 @@ Authorization: Bearer <token>
   "prompt": "Subtle parallax pan over modern cityscape",
   "images": ["/files/xyz789"],  // Optional: if provided, uses Image-to-Video
   "aspect_ratio": "16:9",
-  "options": {
-    "duration": 8,
-    "model_hint": "fast"
-  }
 }
 ```
 
