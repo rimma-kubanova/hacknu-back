@@ -10,8 +10,7 @@ router = APIRouter(prefix="/api", tags=["Generation"])
 
 @router.post("/mock_create", response_model=GenerationResponse)
 async def mock_create(
-    request: GenerationRequest,
-    current_user: User = Depends(get_current_user)
+    request: GenerationRequest
 ):
     """
     Create mockup using Text-to-Image (Nano Banana).
@@ -117,8 +116,7 @@ async def mock_create(
 
 @router.post("/stock_image", response_model=GenerationResponse)
 async def stock_image(
-    request: GenerationRequest,
-    current_user: User = Depends(get_current_user)
+    request: GenerationRequest
 ):
     """
     Generate brand-safe stock images using Text-to-Image (Nano Banana).
@@ -191,8 +189,7 @@ async def stock_image(
 
 @router.post("/stock_video", response_model=GenerationResponse)
 async def stock_video(
-    request: GenerationRequest,
-    current_user: User = Depends(get_current_user)
+    request: GenerationRequest
 ):
     """
     Generate stock video.
