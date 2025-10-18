@@ -17,6 +17,7 @@ class Asset(BaseModel):
     """Generated asset (image or video)"""
     kind: Literal["image", "video"]
     url: str
+    video_id: Optional[int] = None  # Database ID for videos
     meta: Optional[AssetMeta] = None
 
 

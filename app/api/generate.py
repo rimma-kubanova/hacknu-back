@@ -114,6 +114,7 @@ async def generate_video(
         )
         db.add(video_gen)
         db.commit()
+        db.refresh(video_gen)
                 
         return GenerationResponse(
             status="completed",
@@ -121,6 +122,7 @@ async def generate_video(
                 Asset(
                     kind="video",
                     url=video_url,
+                    video_id=video_gen.id,
                     meta=AssetMeta(
                         type="video",
                         aspect=request.aspect_ratio
