@@ -12,14 +12,6 @@ router = APIRouter(prefix="/api", tags=["Generation"])
 async def mock_create(
     request: GenerationRequest
 ):
-    """
-    Create mockup using Text-to-Image (Nano Banana).
-    
-    Use cases:
-    - Device mockup (laptop/mobile)
-    - Billboard/poster placement
-    - UX design showcase
-    """
     try:
         client = get_higgsfield_client()
         
