@@ -93,3 +93,9 @@ class TextGenerationResponse(BaseModel):
     """Response for text generation"""
     text: str
 
+
+class BatchVideoResponse(BaseModel):
+    """Response for batch video generation"""
+    videos: List[Asset]
+    total: int
+

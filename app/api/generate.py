@@ -5,7 +5,7 @@ from app.schemas import (
     GenerationRequest, GenerationResponse, Asset, AssetMeta, 
     VideoHistoryResponse, VideoHistoryItem,
     MoodboardRequest, MoodboardResponse, VideoDetailResponse,
-    TextGenerationRequest, TextGenerationResponse
+    TextGenerationRequest, TextGenerationResponse, BatchVideoResponse
 )
 from app.services.higgsfield import get_higgsfield_client
 from app.database import get_db
@@ -385,4 +385,33 @@ async def generate_text(request: TextGenerationRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Error generating text: {str(e)}"
+        )
+
+
+@router.post("/generate_batch_videos", response_model=BatchVideoResponse)
+async def generate_batch_videos(
+    request: GenerationRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        tasks = []
+        for _ in range(6):
+            tasks.append(generate_video(request, db))
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        videos = []
+        for result in results:
+            if isinstance(result, GenerationResponse) and result.assets:
+                videos.extend(result.assets)
+        
+        return BatchVideoResponse(
+            videos=videos,
+            total=len(videos)
+        )
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating batch videos: {str(e)}"
         )
