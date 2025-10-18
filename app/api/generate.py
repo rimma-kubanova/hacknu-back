@@ -166,6 +166,7 @@ async def generate_fake_video():
         assets=[
             Asset(
                 kind="video",
+                video_id=1, 
                 url="https://d3u0tzju9qaucj.cloudfront.net/5529083c-d5ae-418a-8265-5e779de64095/7e65acb4-d2b2-4785-bd75-d81f06303389.mp4",
                 meta=AssetMeta(
                     type="video",
