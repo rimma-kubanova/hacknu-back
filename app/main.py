@@ -3,9 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.api import api_router
+from app.api.files import router as files_router
+from app.api.generate import router as generate_router
 
 Base.metadata.create_all(bind=engine)
-app = FastAPI()
+app = FastAPI(
+    title="HackNU Dropouts Backend",
+    description="AI-powered mockup and content generation API",
+    version="1.0.0"
+)
 
 origins = ["*"]
 
@@ -19,6 +25,18 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Backend with SQLite is running"}
+    return {
+        "message": "HackNU Dropouts Backend API",
+        "status": "running",
+        "endpoints": {
+            "docs": "/docs",
+            "auth": "/register, /token, /me",
+            "files": "/files (POST), /files/{id} (GET)",
+            "generation": "/api/mock_create, /api/stock_image, /api/stock_video"
+        }
+    }
 
-app.include_router(api_router)
+# Include routers
+app.include_router(api_router)  # User auth endpoints
+app.include_router(files_router)  # File upload/serve
+app.include_router(generate_router)  # AI generation endpoints

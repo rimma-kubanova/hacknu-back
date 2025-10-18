@@ -12,4 +12,12 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY . /code
 
+# Expose port
+EXPOSE 8000
+
+# Environment variables (can be overridden)
+ENV DATABASE_URL=sqlite:///./app.db
+ENV HOST=0.0.0.0
+ENV PORT=8000
+
 CMD ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
