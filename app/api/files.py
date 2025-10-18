@@ -14,10 +14,6 @@ TTL_SECONDS = 15 * 60
 
 @router.post("")
 async def upload_file(file: UploadFile = File(...)):
-    """
-    Upload a file and get a temporary URL.
-    File will expire after TTL_SECONDS.
-    """
     fid = uuid.uuid4().hex[:12]
     file_bytes = await file.read()
     content_type = file.content_type or "image/png"
@@ -25,7 +21,6 @@ async def upload_file(file: UploadFile = File(...)):
     
     STORE[fid] = (file_bytes, content_type, expires_at)
     
-    # Clean up expired files
     _cleanup_expired()
     
     return {
@@ -37,10 +32,6 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.get("/{fid}")
 async def serve_file(fid: str):
-    """
-    Serve a temporarily stored file.
-    Returns 404 if not found, 410 if expired.
-    """
     item = STORE.get(fid)
     if not item:
         raise HTTPException(status_code=404, detail="File not found")

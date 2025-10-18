@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.auth import get_current_user
-from app.models import User, VideoGeneration
+from app.models import VideoGeneration
 from app.schemas import (
     GenerationRequest, GenerationResponse, Asset, AssetMeta, 
     VideoHistoryResponse, VideoHistoryItem,
@@ -19,7 +18,6 @@ router = APIRouter(prefix="/api", tags=["Generation"])
 @router.post("/generate_image", response_model=GenerationResponse)
 async def generate_image(
     request: GenerationRequest,
-    current_user: User = Depends(get_current_user)
 ):
     try:
         client = get_higgsfield_client()
@@ -228,7 +226,6 @@ async def _generate_single_image(client, prompt: str, aspect_ratio: str, input_i
 @router.post("/generate_moodboard_videos", response_model=MoodboardResponse)
 async def generate_moodboard_videos(
     request: MoodboardRequest,
-    current_user: User = Depends(get_current_user)
 ):
     try:
         client = get_higgsfield_client()
