@@ -32,12 +32,11 @@ def root():
             "docs": "/docs",
             "auth": "/register, /token, /me",
             "files": "/files (POST), /files/{id} (GET)",
-            "generation": "/api/generate_image, /api/generate_video, /api/generate_moodboard_videos",
+            "generation": "/api/generate_image, /api/generate_video, /api/generate_moodboard_images",
             "videos": "/api/videos (GET - all), /api/videos/{id} (GET - by ID)"
         }
     }
 
-# Include routers
 app.include_router(api_router)  # User auth endpoints
 app.include_router(files_router)  # File upload/serve
 app.include_router(generate_router)  # AI generation endpoints

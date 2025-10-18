@@ -159,6 +159,23 @@ async def generate_video(
         )
 
 
+@router.post("/generate_fake_video", response_model=GenerationResponse)
+async def generate_fake_video():
+    return GenerationResponse(
+        status="completed",
+        assets=[
+            Asset(
+                kind="video",
+                url="https://d3u0tzju9qaucj.cloudfront.net/5529083c-d5ae-418a-8265-5e779de64095/7e65acb4-d2b2-4785-bd75-d81f06303389.mp4",
+                meta=AssetMeta(
+                    type="video",
+                )
+            )
+        ],
+        provider="higgsfield",
+    )
+
+
 @router.get("/videos", response_model=VideoHistoryResponse)
 async def get_all_videos(db: Session = Depends(get_db)):
     videos = db.query(VideoGeneration).order_by(
@@ -203,16 +220,16 @@ async def get_video_by_id(video_id: int, db: Session = Depends(get_db)):
 
 
 MOODBOARD_PROMPTS = [
-    "Most Important: {PROMPT}. Also important: Flat, minimal hero key visual, bold geometric shapes, generous negative space, soft shadows, clean vector style, cohesive colorway, high contrast, no text, export-ready, centered composition.",
-    "Most Important: {PROMPT}. Also important: Seamless repeating pattern inspired, flat vector motifs, simple modular geometry, subtle rhythm and scale variation, colorway, high legibility, edge-to-edge tiling, no text.",
-    "Most Important: {PROMPT}. Also important: Color swatch collage showing large primary blocks and small accent chips, subtle paper/cutout feel (still flat), palette, balanced spacing, labels omitted (no text), clean grid.",
-    "Most Important: {PROMPT}. Also important: Icon set sheet (12 icons) representing concepts, crisp 2px strokes, rounded joins, consistent corner radius, grid layout, flat vector, colorway, no labels or text, white background.",
-    "Most Important: {PROMPT}. Also important: Abstract shape study using 3–5 geometric primitives, overlapping blends and soft shadows, flat vector look (no gradients or text), harmonious composition, palette , high contrast.",
-    "Most Important: {PROMPT}. Also important: Sticker pack panel themed, 8–10 sticker illustrations with thick outline and flat fills, playful but minimal, even spacing, palette, white background, no text.",
-    "Most Important: {PROMPT}. Also important: Minimal illustration vignette capturing the essence, single focal scene with 2–3 supporting elements, flat vector, subtle depth via layered shapes, colorway , no text.",
-    "Most Important: {PROMPT}. Also important: UI card mood tile inspired, abstract cards and chips (no readable text), flat components, clear hierarchy by size/weight only, neutral background, palette, modern spacing.",
-    "Most Important: {PROMPT}. Also important: Vector cutout collage, overlapping paper-like shapes and frames, soft shadows, torn-edge illusion (still flat), balanced asymmetry, palette, no text, tidy margins.",
-    "Most Important: {PROMPT}. Also important: Wordmark exploration sheet expressed via abstract letterform shapes (no readable text), weight/curve experiments, 6–8 tiles on a grid, flat vector, palette, clean white background."
+    "Most Important: {PROMPT}. Also important: Real-life photographic look, natural lens perspective, soft daylight, believable materials and textures, shallow depth of field, gentle reflections, tidy composition, high detail yet clean, no text or watermarks, export-ready.",
+    "Most Important: {PROMPT}. Also important: 3D toy style, glossy plastic and soft vinyl materials, rounded chibi proportions, simple shapes, studio lighting with smooth specular highlights, clean backdrop, playful but minimal, no text, render-quality output.",
+    "Most Important: {PROMPT}. Also important: Artistic mixed-media collage, paper cutouts + paint daubs + pencil texture, layered composition with subtle shadows, handmade feel but tidy, restrained palette, high contrast focal point, no text, gallery-ready.",
+    "Most Important: {PROMPT}. Also important: Anime illustration, cel shading, crisp line art, expressive but clean shapes, balanced composition, soft ambient rim light, simple gradient sky or backdrop, saturated yet harmonious colors, no text.",
+    "Most Important: {PROMPT}. Also important: Film-like cinematic frame, 35mm/50mm vibe, gentle film grain, cinematic lighting and color grade, letterbox-safe composition, realistic shadows, elegant contrast, no captions or overlays.",
+    "Most Important: {PROMPT}. Also important: Cyberpunk aesthetic, neon signage, rainy reflections, high-contrast lighting, tech details and holographic UI motifs (subtle), moody atmosphere, deep blues/magentas/cyans, clean framing, no text.",
+    "Most Important: {PROMPT}. Also important: Viral trending aesthetic, bold focal subject, high punch contrast, minimal background clutter, thumb-stopping composition for social feeds, polished but simple, brand-safe, no text or memes.",
+    "Most Important: {PROMPT}. Also important: Nature-inspired scene, organic forms, soft natural light, gentle shadows, earthy palette, calm negative space, serene composition, realistic textures (leaves, water, stone) kept minimal, no text.",
+    "Most Important: {PROMPT}. Also important: Soft gradient aesthetic, smooth color transitions, rounded shapes, airy depth with subtle blur, pastel or harmonious hues, clean geometric balance, ultra-minimal, no text.",
+    "Most Important: {PROMPT}. Also important: Dark neon lighting, glossy surfaces, rim-lit edges, vivid magenta/cyan/blue accents, dramatic contrast, subtle volumetric haze, centered hero composition, no text."
 ]
 
 RANDOM_ASPECT_RATIOS = ["1:1", "9:16", "4:5", "3:4"]
@@ -227,9 +244,6 @@ async def _generate_single_image(client, prompt: str, aspect_ratio: str, input_i
                 for url in input_images
             ]
 
-
-            
-        
         job = await client.text_to_image_nano(
             prompt=prompt,
             aspect_ratio=aspect_ratio,
@@ -246,8 +260,8 @@ async def _generate_single_image(client, prompt: str, aspect_ratio: str, input_i
         return None
 
 
-@router.post("/generate_moodboard_videos", response_model=MoodboardResponse)
-async def generate_moodboard_videos(
+@router.post("/generate_moodboard_images", response_model=MoodboardResponse)
+async def generate_moodboard_images(
     request: MoodboardRequest,
 ):
     try:
