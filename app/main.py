@@ -32,7 +32,8 @@ def root():
             "docs": "/docs",
             "auth": "/register, /token, /me",
             "files": "/files (POST), /files/{id} (GET)",
-            "generation": "/api/generate_image, /api/generate_video"
+            "generation": "/api/generate_image, /api/generate_video",
+            "videos": "/api/videos (GET - all generated videos)"
         }
     }
 

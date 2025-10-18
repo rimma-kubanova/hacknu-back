@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.auth import get_current_user
-from app.models import User
-from app.schemas import GenerationRequest, GenerationResponse, Asset, AssetMeta
+from app.models import User, VideoGeneration
+from app.schemas import GenerationRequest, GenerationResponse, Asset, AssetMeta, VideoHistoryResponse, VideoHistoryItem
 from app.services.higgsfield import get_higgsfield_client
+from app.database import get_db
 import httpx
 
 router = APIRouter(prefix="/api", tags=["Generation"])
@@ -78,7 +80,8 @@ async def generate_image(
 
 @router.post("/generate_video", response_model=GenerationResponse)
 async def generate_video(
-    request: GenerationRequest
+    request: GenerationRequest,
+    db: Session = Depends(get_db)
 ):
     try:
         client = get_higgsfield_client()
@@ -98,6 +101,15 @@ async def generate_video(
         video_url = results.get("raw", {}).get("url")
         if not video_url:
             raise HTTPException(status_code=500, detail="No video URL in response")
+        
+        video_gen = VideoGeneration(
+            video_url=video_url,
+            prompt=request.prompt,
+            aspect_ratio=request.aspect_ratio,
+            job_set_id=job_set_id
+        )
+        db.add(video_gen)
+        db.commit()
                 
         return GenerationResponse(
             status="completed",
@@ -140,3 +152,26 @@ async def generate_video(
             detail=f"Internal error: {str(e)}"
         )
 
+
+@router.get("/videos", response_model=VideoHistoryResponse)
+async def get_all_videos(db: Session = Depends(get_db)):
+    videos = db.query(VideoGeneration).order_by(
+        VideoGeneration.created_at.desc()
+    ).all()
+    
+    video_items = [
+        VideoHistoryItem(
+            id=v.id,
+            video_url=v.video_url,
+            prompt=v.prompt,
+            aspect_ratio=v.aspect_ratio,
+            job_set_id=v.job_set_id,
+            created_at=v.created_at.isoformat()
+        )
+        for v in videos
+    ]
+    
+    return VideoHistoryResponse(
+        total=len(video_items),
+        videos=video_items
+    )

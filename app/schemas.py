@@ -38,3 +38,22 @@ class FileUploadResponse(BaseModel):
     url: str
     expires_in_seconds: int
 
+
+class VideoHistoryItem(BaseModel):
+    """Single video generation history item"""
+    id: int
+    video_url: str
+    prompt: str
+    aspect_ratio: str
+    job_set_id: str
+    created_at: str
+    
+    class Config:
+        from_attributes = True
+
+
+class VideoHistoryResponse(BaseModel):
+    """Response for video history"""
+    total: int
+    videos: List[VideoHistoryItem]
+
