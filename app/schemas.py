@@ -17,7 +17,7 @@ class Asset(BaseModel):
     """Generated asset (image or video)"""
     kind: Literal["image", "video"]
     url: str
-    video_id: Optional[int] = None  # Database ID for videos
+    video_id: Optional[int] = None
     meta: Optional[AssetMeta] = None
 
 
@@ -80,4 +80,16 @@ class VideoDetailResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class TextGenerationRequest(BaseModel):
+    """Request for text generation"""
+    prompt: str
+    max_tokens: Optional[int] = 500
+    temperature: Optional[float] = 0.7
+
+
+class TextGenerationResponse(BaseModel):
+    """Response for text generation"""
+    text: str
 

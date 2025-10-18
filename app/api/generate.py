@@ -4,7 +4,8 @@ from app.models import VideoGeneration
 from app.schemas import (
     GenerationRequest, GenerationResponse, Asset, AssetMeta, 
     VideoHistoryResponse, VideoHistoryItem,
-    MoodboardRequest, MoodboardResponse, VideoDetailResponse
+    MoodboardRequest, MoodboardResponse, VideoDetailResponse,
+    TextGenerationRequest, TextGenerationResponse
 )
 from app.services.higgsfield import get_higgsfield_client
 from app.database import get_db
@@ -359,4 +360,29 @@ async def generate_moodboard_images(
         raise HTTPException(
             status_code=500,
             detail=f"Error generating moodboard: {str(e)}"
+        )
+
+
+@router.post("/generate_text", response_model=TextGenerationResponse)
+async def generate_text(request: TextGenerationRequest):
+    try:
+        openai_client = get_openai_client()
+        
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": request.prompt}
+            ],
+            max_tokens=request.max_tokens,
+            temperature=request.temperature
+        )
+        
+        generated_text = response.choices[0].message.content
+        
+        return TextGenerationResponse(text=generated_text)
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating text: {str(e)}"
         )
