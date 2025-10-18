@@ -33,7 +33,7 @@ def root():
             "auth": "/register, /token, /me",
             "files": "/files (POST), /files/{id} (GET)",
             "generation": "/api/generate_image, /api/generate_video, /api/generate_moodboard_videos",
-            "videos": "/api/videos (GET - all generated videos)"
+            "videos": "/api/videos (GET - all), /api/videos/{id} (GET - by ID)"
         }
     }
 

@@ -9,7 +9,7 @@ router = APIRouter(prefix="/files", tags=["Files"])
 # In-memory storage: {id: (bytes, content_type, expires_at)}
 STORE: Dict[str, Tuple[bytes, str, float]] = {}
 
-TTL_SECONDS = 15 * 60
+TTL_SECONDS = 60 * 60
 
 
 @router.post("")

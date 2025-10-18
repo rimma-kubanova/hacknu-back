@@ -67,3 +67,16 @@ class MoodboardResponse(BaseModel):
     images: List[str]
     total: int
 
+
+class VideoDetailResponse(BaseModel):
+    """Response for single video details"""
+    id: int
+    video_url: str
+    prompt: str
+    aspect_ratio: str
+    job_set_id: str
+    created_at: str
+    
+    class Config:
+        from_attributes = True
+

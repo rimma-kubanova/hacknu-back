@@ -4,7 +4,7 @@ from app.models import VideoGeneration
 from app.schemas import (
     GenerationRequest, GenerationResponse, Asset, AssetMeta, 
     VideoHistoryResponse, VideoHistoryItem,
-    MoodboardRequest, MoodboardResponse
+    MoodboardRequest, MoodboardResponse, VideoDetailResponse
 )
 from app.services.higgsfield import get_higgsfield_client
 from app.database import get_db
@@ -181,7 +181,25 @@ async def get_all_videos(db: Session = Depends(get_db)):
     )
 
 
-# Moodboard prompt templates
+@router.get("/videos/{video_id}", response_model=VideoDetailResponse)
+async def get_video_by_id(video_id: int, db: Session = Depends(get_db)):
+    video = db.query(VideoGeneration).filter(
+        VideoGeneration.id == video_id
+    ).first()
+    
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    return VideoDetailResponse(
+        id=video.id,
+        video_url=video.video_url,
+        prompt=video.prompt,
+        aspect_ratio=video.aspect_ratio,
+        job_set_id=video.job_set_id,
+        created_at=video.created_at.isoformat()
+    )
+
+
 MOODBOARD_PROMPTS = [
     "Most Important: {PROMPT}. Also important: Flat, minimal hero key visual, bold geometric shapes, generous negative space, soft shadows, clean vector style, cohesive colorway, high contrast, no text, export-ready, centered composition.",
     "Most Important: {PROMPT}. Also important: Seamless repeating pattern inspired, flat vector motifs, simple modular geometry, subtle rhythm and scale variation, colorway, high legibility, edge-to-edge tiling, no text.",
@@ -206,6 +224,9 @@ async def _generate_single_image(client, prompt: str, aspect_ratio: str, input_i
                 {"type": "image_url", "image_url": url}
                 for url in input_images
             ]
+
+
+            
         
         job = await client.text_to_image_nano(
             prompt=prompt,
