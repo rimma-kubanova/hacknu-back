@@ -8,78 +8,10 @@ import httpx
 router = APIRouter(prefix="/api", tags=["Generation"])
 
 
-@router.post("/mock_create", response_model=GenerationResponse)
-async def mock_create(
-    request: GenerationRequest
-):
-    try:
-        client = get_higgsfield_client()
-        
-        input_images = []
-        if request.images:
-            input_images = [
-                {"type": "image_url", "image_url": url}
-                for url in request.images
-            ]
-        
-        job = await client.text_to_image_nano(
-            prompt=request.prompt,
-            aspect_ratio=request.aspect_ratio,
-            input_images=input_images
-        )
-        
-        job_set_id = job["id"]
-        results, job_set = await client.wait_for_completion(job_set_id)
-        
-        image_url = results.get("raw", {}).get("url")
-        if not image_url:
-            raise HTTPException(status_code=500, detail="No image URL in response")
-        
-        assets = [
-            Asset(
-                kind="image",
-                url=image_url,
-                meta=AssetMeta(type="image")
-            )
-        ]
-        
-        return GenerationResponse(
-            status="completed",
-            assets=assets,
-            job_set_id=job_set_id,
-            provider="higgsfield",
-            input_echo={
-                "prompt": request.prompt,
-                "images": request.images,
-                "aspect_ratio": request.aspect_ratio
-            }
-        )
-    
-    except httpx.HTTPError as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Higgsfield API error: {str(e)}"
-        )
-    except TimeoutError as e:
-        raise HTTPException(
-            status_code=504,
-            detail=str(e)
-        )
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal error: {str(e)}"
-        )
-
-
-@router.post("/stock_image", response_model=GenerationResponse)
-async def stock_image(
-    request: GenerationRequest
+@router.post("/generate_image", response_model=GenerationResponse)
+async def generate_image(
+    request: GenerationRequest,
+    current_user: User = Depends(get_current_user)
 ):
     try:
         client = get_higgsfield_client()
@@ -117,6 +49,7 @@ async def stock_image(
             provider="higgsfield",
             input_echo={
                 "prompt": request.prompt,
+                "images": request.images,
                 "aspect_ratio": request.aspect_ratio
             }
         )
@@ -143,8 +76,8 @@ async def stock_image(
         )
 
 
-@router.post("/stock_video", response_model=GenerationResponse)
-async def stock_video(
+@router.post("/generate_video", response_model=GenerationResponse)
+async def generate_video(
     request: GenerationRequest
 ):
     try:

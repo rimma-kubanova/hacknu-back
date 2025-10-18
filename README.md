@@ -7,10 +7,9 @@ AI-powered mockup and content generation API for Figma plugin integration.
 - **User Authentication**: JWT-based authentication system
 - **Ephemeral File Storage**: Temporary file upload with automatic cleanup (15min TTL)
 - **AI Content Generation**: 
-  - **Mock Creation**: Generate device mockups, billboard placements, UX showcases
-  - **Stock Images**: Brand-safe stock image generation
-  - **Stock Videos**: Text-to-video and image-to-video generation
-- **Higgsfield AI Integration**: Direct pass-through to Nano Banana, Veo 3, and Kling models
+  - **Image Generation**: Unified endpoint for mockups, stock images, compositions (Text-to-Image with Nano Banana)
+  - **Video Generation**: Image-to-video animation (Veo 3)
+- **Higgsfield AI Integration**: Direct pass-through to Nano Banana and Veo 3 models
 
 ## 📋 Prerequisites
 
@@ -135,19 +134,32 @@ GET /files/{file_id}
 
 All generation endpoints require authentication via `Authorization: Bearer <token>` header.
 
-#### 1. Mock Create (Device/Billboard Mockups)
+#### 1. Generate Image (Unified Endpoint)
 
-Generate mockups with optional animation.
+Generate images using Text-to-Image (Nano Banana). Supports both text-only and text+image generation for mockups, stock images, and compositions.
 
+**With Images (Mockups/Compositions)**:
 ```bash
-POST /api/mock_create
+POST /api/generate_image
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "prompt": "Modern billboard on city street at golden hour with fish-themed poster design",
-  "images": ["/files/abc123"],
-  "aspect_ratio": "16:9",
+  "prompt": "kendrick lamar riding a horse in kazakhstan",
+  "images": ["https://cdn.example.com/poster.png"],
+  "aspect_ratio": "1:1"
+}
+```
+
+**Without Images (Pure Text-to-Image)**:
+```bash
+POST /api/generate_image
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "prompt": "Professional workspace with natural lighting",
+  "aspect_ratio": "16:9"
 }
 ```
 
@@ -158,17 +170,17 @@ Authorization: Bearer <token>
   "assets": [
     {
       "kind": "image",
-      "url": "https://cdn.higgsfield.ai/...",
+      "url": "https://cdn.higgsfield.ai/result.jpg",
       "meta": {"type": "image"}
-    },
-    {
-      "kind": "video",
-      "url": "https://cdn.higgsfield.ai/...",
-      "meta": {"type": "video", "dur": 8}
     }
   ],
   "job_set_id": "uuid",
-  "provider": "higgsfield"
+  "provider": "higgsfield",
+  "input_echo": {
+    "prompt": "...",
+    "images": [...],
+    "aspect_ratio": "16:9"
+  }
 }
 ```
 
@@ -176,50 +188,26 @@ Authorization: Bearer <token>
 - Device mockups (laptop, mobile, tablet)
 - Billboard/poster placements
 - UX design showcases
+- Stock images
+- Image compositions
+- Style transfer
 
-#### 2. Stock Image Generation
+#### 2. Generate Video
 
-Generate brand-safe stock images.
+Image-to-video generation using Veo 3. Animates existing images with cinematic effects.
 
 ```bash
-POST /api/stock_image
+POST /api/generate_video
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "prompt": "Professional workspace with natural lighting",
+  "prompt": "Subtle parallax pan with cinematic lighting",
+  "images": ["https://cdn.example.com/image.png"],
   "aspect_ratio": "16:9",
-  "images": []
-}
-```
-
-**Response**:
-```json
-{
-  "status": "completed",
-  "assets": [
-    {
-      "kind": "image",
-      "url": "https://cdn.higgsfield.ai/..."
-    }
-  ],
-  "job_set_id": "uuid"
-}
-```
-
-#### 3. Stock Video Generation
-
-Generate videos from text or images.
-
-```bash
-POST /api/stock_video
-Content-Type: application/json
-Authorization: Bearer <token>
-
-{
-  "prompt": "Subtle parallax pan over modern cityscape",
-  "images": ["/files/xyz789"],  // Optional: if provided, uses Image-to-Video
-  "aspect_ratio": "16:9",
+  "options": {
+    "model_hint": "fast"
+  }
 }
 ```
 
@@ -230,14 +218,16 @@ Authorization: Bearer <token>
   "assets": [
     {
       "kind": "video",
-      "url": "https://cdn.higgsfield.ai/...",
+      "url": "https://cdn.higgsfield.ai/result.mp4",
       "meta": {
         "type": "video",
         "dur": 8,
         "aspect": "16:9"
       }
     }
-  ]
+  ],
+  "job_set_id": "uuid",
+  "provider": "higgsfield"
 }
 ```
 
@@ -248,15 +238,15 @@ Authorization: Bearer <token>
 ```
 Frontend/Figma Plugin
     ↓
-1. Upload images → POST /files → Get temporary URLs
+1. Upload images (optional) → POST /files → Get temporary URLs
     ↓
-2. Submit generation request → POST /api/mock_create (or stock_image/stock_video)
+2. Submit generation request → POST /api/generate_image or /api/generate_video
     ↓
 Backend
     ↓
-3. Forward to Higgsfield API (Nano Banana / Veo 3 / Kling)
+3. Forward to Higgsfield API (Nano Banana for images / Veo 3 for videos)
     ↓
-4. Poll for completion
+4. Poll for completion (waits 30-60s)
     ↓
 5. Return normalized response
     ↓
@@ -335,8 +325,8 @@ curl -X POST http://localhost:8000/files \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@design.png"
 
-# 3. Generate mockup
-curl -X POST http://localhost:8000/api/mock_create \
+# 3. Generate image
+curl -X POST http://localhost:8000/api/generate_image \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
