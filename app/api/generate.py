@@ -8,11 +8,20 @@ from app.schemas import (
 )
 from app.services.higgsfield import get_higgsfield_client
 from app.database import get_db
+from app.config import settings
 import httpx
 import asyncio
 import random
 
 router = APIRouter(prefix="/api", tags=["Generation"])
+
+
+def get_openai_client():
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    
+    from openai import AsyncOpenAI
+    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 @router.post("/generate_image", response_model=GenerationResponse)
@@ -220,20 +229,63 @@ async def get_video_by_id(video_id: int, db: Session = Depends(get_db)):
     )
 
 
-MOODBOARD_PROMPTS = [
-    "Most Important: {PROMPT}. Also important: Real-life photographic look, natural lens perspective, soft daylight, believable materials and textures, shallow depth of field, gentle reflections, tidy composition, high detail yet clean, no text or watermarks, export-ready.",
-    "Most Important: {PROMPT}. Also important: 3D toy style, glossy plastic and soft vinyl materials, rounded chibi proportions, simple shapes, studio lighting with smooth specular highlights, clean backdrop, playful but minimal, no text, render-quality output.",
-    "Most Important: {PROMPT}. Also important: Artistic mixed-media collage, paper cutouts + paint daubs + pencil texture, layered composition with subtle shadows, handmade feel but tidy, restrained palette, high contrast focal point, no text, gallery-ready.",
-    "Most Important: {PROMPT}. Also important: Anime illustration, cel shading, crisp line art, expressive but clean shapes, balanced composition, soft ambient rim light, simple gradient sky or backdrop, saturated yet harmonious colors, no text.",
-    "Most Important: {PROMPT}. Also important: Film-like cinematic frame, 35mm/50mm vibe, gentle film grain, cinematic lighting and color grade, letterbox-safe composition, realistic shadows, elegant contrast, no captions or overlays.",
-    "Most Important: {PROMPT}. Also important: Cyberpunk aesthetic, neon signage, rainy reflections, high-contrast lighting, tech details and holographic UI motifs (subtle), moody atmosphere, deep blues/magentas/cyans, clean framing, no text.",
-    "Most Important: {PROMPT}. Also important: Viral trending aesthetic, bold focal subject, high punch contrast, minimal background clutter, thumb-stopping composition for social feeds, polished but simple, brand-safe, no text or memes.",
-    "Most Important: {PROMPT}. Also important: Nature-inspired scene, organic forms, soft natural light, gentle shadows, earthy palette, calm negative space, serene composition, realistic textures (leaves, water, stone) kept minimal, no text.",
-    "Most Important: {PROMPT}. Also important: Soft gradient aesthetic, smooth color transitions, rounded shapes, airy depth with subtle blur, pastel or harmonious hues, clean geometric balance, ultra-minimal, no text.",
-    "Most Important: {PROMPT}. Also important: Dark neon lighting, glossy surfaces, rim-lit edges, vivid magenta/cyan/blue accents, dramatic contrast, subtle volumetric haze, centered hero composition, no text."
-]
-
 RANDOM_ASPECT_RATIOS = ["1:1", "9:16", "4:5", "3:4"]
+
+
+async def generate_moodboard_prompts_with_openai(user_prompt: str, count: int) -> list[str]:
+    openai_client = get_openai_client()
+    
+    system_prompt = """You are an expert art director creating diverse, high-quality image prompts for a moodboard.
+Generate {count} unique, detailed image prompts based on the user's theme.
+
+Requirements for each prompt:
+- Be specific and descriptive
+- Include artistic style, lighting, composition details
+- Vary perspectives and moods across prompts
+- Make them realistic, cinematic, and high-quality
+- Include technical photography/rendering details
+- Each prompt should explore different aspects of the theme
+- NO text, watermarks, or words in the images
+- Each prompt should be 50-100 words
+
+Styles to vary across:
+- Photorealistic photography (natural light, depth of field)
+- Cinematic film stills (35mm, color grading)
+- 3D renders (materials, studio lighting)
+- Minimalist compositions
+- Editorial style
+- Product photography
+- Architectural perspectives
+- Nature close-ups
+- Abstract interpretations
+- Atmospheric mood pieces
+
+Return ONLY a JSON array of {count} prompt strings, nothing else."""
+
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt.replace("{count}", str(count))},
+                {"role": "user", "content": f"Theme: {user_prompt}\n\nGenerate {count} diverse, professional image prompts for a moodboard exploring this theme from different angles and styles."}
+            ],
+            temperature=0.9,
+            response_format={"type": "json_object"}
+        )
+        
+        import json
+        result = json.loads(response.choices[0].message.content)
+        
+        if isinstance(result, dict):
+            prompts = result.get("prompts", list(result.values()))
+        else:
+            prompts = result
+            
+        return prompts[:count]
+    
+    except Exception as e:
+        print(f"OpenAI error: {str(e)}")
+        return [f"{user_prompt}, professional photography, high quality, detailed" for _ in range(count)]
 
 
 async def _generate_single_image(client, prompt: str, aspect_ratio: str, input_images: list = None):
@@ -268,14 +320,7 @@ async def generate_moodboard_images(
     try:
         client = get_higgsfield_client()
         
-        user_prompt = request.prompt if request.prompt else "modern design"
-        
-        final_prompts = [
-            template.replace("{PROMPT}", user_prompt)
-            for template in MOODBOARD_PROMPTS
-        ]
-        
-        generated_images = []
+        user_prompt = request.prompt if request.prompt else "modern design aesthetic"
         
         liked_count = len(request.liked_pictures) if request.liked_pictures else 0
         images_to_generate = 10 - liked_count
@@ -286,12 +331,13 @@ async def generate_moodboard_images(
                 total=len(request.liked_pictures[:10])
             )
         
+        ai_prompts = await generate_moodboard_prompts_with_openai(user_prompt, images_to_generate)
+
+        generated_images = []
         tasks = []
         
-        for i in range(images_to_generate):
-            prompt = final_prompts[i % len(final_prompts)]
+        for _, prompt in enumerate(ai_prompts):
             aspect_ratio = random.choice(RANDOM_ASPECT_RATIOS)
-            
             input_images = request.liked_pictures if request.liked_pictures else None
             
             tasks.append(
@@ -303,7 +349,7 @@ async def generate_moodboard_images(
         for result in results:
             if result and isinstance(result, str):
                 generated_images.append(result)
-                
+                 
         return MoodboardResponse(
             images=generated_images,
             total=len(generated_images)

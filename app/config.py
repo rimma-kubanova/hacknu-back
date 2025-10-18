@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     HIGGSFIELD_API_SECRET: Optional[str] = None
     HIGGSFIELD_BASE_URL: str = "https://platform.higgsfield.ai/v1"
     
+    # OpenAI
+    OPENAI_API_KEY: Optional[str] = None
+    
     # File Upload
     TEMP_UPLOAD_DIR: str = "./temp_uploads"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
