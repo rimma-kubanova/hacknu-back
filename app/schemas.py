@@ -24,12 +24,10 @@ class GenerationResponse(BaseModel):
     """Response model for all generation endpoints"""
     status: Literal["completed", "running", "failed"]
     assets: Optional[List[Asset]] = None
-    credits_used: Optional[int] = None
     job_set_id: Optional[str] = None
     provider: str = "higgsfield"
     input_echo: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-    poll_after_ms: Optional[int] = None
 
 
 class FileUploadResponse(BaseModel):
@@ -56,4 +54,16 @@ class VideoHistoryResponse(BaseModel):
     """Response for video history"""
     total: int
     videos: List[VideoHistoryItem]
+
+
+class MoodboardRequest(BaseModel):
+    """Request for moodboard generation"""
+    prompt: Optional[str] = None
+    liked_pictures: Optional[List[str]] = None
+
+
+class MoodboardResponse(BaseModel):
+    """Response for moodboard generation"""
+    images: List[str]
+    total: int
 
